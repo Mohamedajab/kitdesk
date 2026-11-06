@@ -3,11 +3,11 @@
 An equipment-lending desk built with **C#, ASP.NET Core 10, Entity Framework Core, React and PostgreSQL**.
 Issue an item, record its return and keep the original loan history.
 
-[Run locally](#run-locally) · [Verification](docs/verification.md) · [Deployment](docs/deployment.md)
+[Run locally](#run-locally) · [Verification](docs/verification.md) · [Deployment](docs/deployment.md) · [Workflow recording](docs/recordings/lending-workflow.webm)
 
 **Verified against real PostgreSQL:** eight simultaneous checkout requests produced one successful loan and seven conflicts. The database enforces one active loan per item.
 
-The public demonstration is being prepared. It uses real backend requests and isolated temporary workspaces, not browser-local mock payments or records.
+The hosted demonstration is being prepared. Each visitor gets an isolated temporary workspace backed by the same .NET API and PostgreSQL database used by the tests.
 
 ![Equipment desk](docs/screenshots/equipment.png)
 

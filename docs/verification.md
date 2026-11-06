@@ -4,7 +4,7 @@
 
 ## Backend
 
-Local `dotnet test --logger 'trx;LogFileName=backend.trx' --results-directory TestResults` passed **21 tests, zero skips**, against a dedicated PostgreSQL 17.11 database. The local server uses the Zonky Maven Central package of PostgreSQL Windows binaries; this is a genuine PostgreSQL process, not an in-memory substitute. Docker Desktop is installed but its engine was not reachable locally.
+Local `dotnet test --logger 'trx;LogFileName=backend.trx' --results-directory TestResults` passed **22 tests, zero skips**, against a dedicated PostgreSQL 17.11 database. The local server uses the Zonky Maven Central package of PostgreSQL Windows binaries; this is a genuine PostgreSQL process, not an in-memory substitute. Docker Desktop is installed but its engine was not reachable locally.
 
 `dotnet build -c Release -warnaserror` passed with zero warnings/errors. `dotnet format` was applied; CI separately verifies formatting without rewriting files.
 
@@ -21,6 +21,7 @@ Covered scenarios:
 - Concurrent equipment creation respects the 50-item cap; loan history counts towards the 100-loan cap.
 - The shared 200-workspace cap blocks admission until expired workspaces make room.
 - Rate-limit rejection includes Problem Details and Retry-After. Most backend tests raise the admission allowance to exercise business rules; the rate-limit test explicitly sets it to one.
+- An independent app host reads the stored Data Protection key and authenticates an existing session cookie.
 
 The app's normal public allowance remains five demo starts per minute per peer and 60 mutations per minute per workspace. No capacity or multi-region performance claim is established.
 
@@ -32,7 +33,9 @@ Local `npm run test:browser` passed all three Chromium cases: staff/manager work
 
 The first browser run caught an absolutely positioned screen-reader label extending outside the mobile viewport. Positioning its containing scroll region fixed the cause; the rerun passed without hiding page overflow.
 
-The first CI run passed restore, formatting, the warning-free Release build and all 21 PostgreSQL tests, but the first browser request raced application startup. CI now waits for `/healthz` before browser checks. No application failure was hidden with a test retry. Final CI and hosting evidence will be added after those checks pass.
+The first CI run passed restore, formatting, the warning-free Release build and all 21 then-current PostgreSQL tests, but the first browser request raced application startup. CI now waits for `/healthz` before browser checks. No application failure was hidden with a test retry.
+
+[CI run 42209651549](https://github.com/Mohamedajab/kitdesk/actions/runs/42209651549), head `3fbe25d4ee715c4e8c4d785d814ad23c3944fe00`, passed all 22 database tests with zero skips, formatting, the warning-free Release build, clean locked restores, frontend lint/type checking/build, all three Chromium cases and the multi-stage Docker image build on Ubuntu. PR #1 was merged after this run passed. The same runtime is being deployed on Render Free.
 
 ## Evaluation boundaries
 
