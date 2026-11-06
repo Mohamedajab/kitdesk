@@ -82,14 +82,19 @@ public sealed class DeskTests(DeskFactory app) : IClassFixture<DeskFactory>
     public async Task RenderTlsTerminationKeepsCookiesSecureAndAllowsDemo()
     {
         await using var hosted = app.WithWebHostBuilder(builder => builder.UseEnvironment("Production").UseSetting("RENDER", "true"));
-        using var client = hosted.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
+        using var client = hosted.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
         client.DefaultRequestHeaders.Add("X-Forwarded-Proto", "http");
         var session = await client.GetAsync("/api/session");
         Assert.Equal(HttpStatusCode.OK, session.StatusCode);
         Assert.All(session.Headers.GetValues("Set-Cookie"), cookie => Assert.Contains("secure", cookie, StringComparison.OrdinalIgnoreCase));
-        var started = await DeskFactory.Post(client, "/api/demo/start", new { });
+        client.DefaultRequestHeaders.Add("Cookie", string.Join("; ", session.Headers.GetValues("Set-Cookie").Select(cookie => cookie.Split(';')[0])));
+        var body = await session.Content.ReadFromJsonAsync<JsonObject>();
+        client.DefaultRequestHeaders.Add("X-CSRF-TOKEN", body!["csrfToken"]!.GetValue<string>());
+        var started = await client.PostAsJsonAsync("/api/demo/start", new { });
         Assert.Equal(HttpStatusCode.Created, started.StatusCode);
         Assert.All(started.Headers.GetValues("Set-Cookie"), cookie => Assert.Contains("secure", cookie, StringComparison.OrdinalIgnoreCase));
+        client.DefaultRequestHeaders.Remove("Cookie");
+        client.DefaultRequestHeaders.Add("Cookie", string.Join("; ", started.Headers.GetValues("Set-Cookie").Select(cookie => cookie.Split(';')[0])));
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/equipment")).StatusCode);
     }
 
