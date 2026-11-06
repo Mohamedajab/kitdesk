@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/wwwroot/
+**/dist/
+.env
+.env.*
+!.env.example
+TestResults/
+playwright-report/
+test-results/
+*.user
+.tools/
