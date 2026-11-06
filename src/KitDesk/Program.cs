@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 16 * 1024);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddDbContext<DeskDb>(options => options.UseNpgsql(
     builder.Configuration.GetConnectionString("Desk") ?? throw new InvalidOperationException("Set ConnectionStrings__Desk to a PostgreSQL connection string.")));

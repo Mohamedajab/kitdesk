@@ -28,7 +28,11 @@ The app's normal public allowance remains five demo starts per minute per peer a
 
 Frontend lint and TypeScript/production build pass. The dependency audit reported zero vulnerabilities after using the same small Oxlint setup as the existing portfolio apps.
 
-Browser, CI and hosting results will be recorded here after the final checks. A failing check is not counted as a pass.
+Local `npm run test:browser` passed all three Chromium cases: staff/manager workflow, repeated borrowing after return, native validation, keyboard focus/escape, axe checks, widths 390/768/1440, a conflicting edit with preserved input, separate visitor workspaces and persistence across reload.
+
+The first browser run caught an absolutely positioned screen-reader label extending outside the mobile viewport. Positioning its containing scroll region fixed the cause; the rerun passed without hiding page overflow.
+
+The first CI run passed restore, formatting, the warning-free Release build and all 21 PostgreSQL tests, but the first browser request raced application startup. CI now waits for `/healthz` before browser checks. No application failure was hidden with a test retry. Final CI and hosting evidence will be added after those checks pass.
 
 ## Evaluation boundaries
 

@@ -313,4 +313,19 @@ public sealed class DeskTests(DeskFactory app) : IClassFixture<DeskFactory>
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync(created.Headers.Location)).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await other.GetAsync(created.Headers.Location)).StatusCode);
     }
+
+    [Fact]
+    public async Task IndependentHostReadsPersistedSessionKeys()
+    {
+        using var original = app.Client();
+        var started = await DeskFactory.Post(original, "/api/demo/start", new { });
+        var cookies = string.Join("; ", started.Headers.GetValues("Set-Cookie").Select(value => value.Split(';')[0]));
+        using (var scope = app.Services.CreateScope())
+            Assert.True(await scope.ServiceProvider.GetRequiredService<DeskDb>().DataProtectionKeys.AnyAsync());
+        await using var replacement = app.WithWebHostBuilder(_ => { });
+        using var next = replacement.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false });
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/equipment");
+        request.Headers.Add("Cookie", cookies);
+        Assert.Equal(HttpStatusCode.OK, (await next.SendAsync(request)).StatusCode);
+    }
 }

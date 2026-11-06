@@ -44,6 +44,7 @@ jobs:
         working-directory: web
       - run: dotnet run --project src/KitDesk -c Release -- --migrate
       - run: dotnet run --project src/KitDesk -c Release --no-build --urls http://127.0.0.1:5080 > /tmp/kitdesk.log 2>&1 &
+      - run: curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-delay 1 http://127.0.0.1:5080/healthz
       - run: npm run test:browser
         working-directory: web
       - run: docker build -t kitdesk:ci .
