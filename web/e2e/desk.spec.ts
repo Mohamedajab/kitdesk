@@ -30,6 +30,7 @@ test("manager/staff workflow, return history, validation, keyboard and mobile", 
     name: "Check out Test audio recorder",
     exact: true,
   });
+  await expect(trigger).toBeEnabled();
   await trigger.focus();
   await page.keyboard.press("Enter");
   await expect(page.getByRole("dialog")).toBeVisible();

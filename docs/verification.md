@@ -4,7 +4,7 @@
 
 ## Backend
 
-Local `dotnet test --logger 'trx;LogFileName=backend.trx' --results-directory TestResults` passed **22 tests, zero skips**, against a dedicated PostgreSQL 17.11 database. The local server uses the Zonky Maven Central package of PostgreSQL Windows binaries; this is a genuine PostgreSQL process, not an in-memory substitute. Docker Desktop is installed but its engine was not reachable locally.
+Local `dotnet test --logger 'trx;LogFileName=backend.trx' --results-directory TestResults` passed **24 tests, zero skips**, against a dedicated PostgreSQL 17.11 database. The local server uses the Zonky Maven Central package of PostgreSQL Windows binaries; this is a genuine PostgreSQL process, not an in-memory substitute. Docker Desktop is installed but its engine was not reachable locally.
 
 `dotnet build -c Release -warnaserror` passed with zero warnings/errors. `dotnet format` was applied; CI separately verifies formatting without rewriting files.
 
@@ -22,6 +22,7 @@ Covered scenarios:
 - The shared 200-workspace cap blocks admission until expired workspaces make room.
 - Rate-limit rejection includes Problem Details and Retry-After. Most backend tests raise the admission allowance to exercise business rules; the rate-limit test explicitly sets it to one.
 - An independent app host reads the stored Data Protection key and authenticates an existing session cookie.
+- Render TLS termination preserves Secure cookies and authenticated access over the internal HTTP hop. Other hosts cannot spoof HTTPS with a forwarding header.
 
 The app's normal public allowance remains five demo starts per minute per peer and 60 mutations per minute per workspace. No capacity or multi-region performance claim is established.
 
@@ -35,7 +36,26 @@ The first browser run caught an absolutely positioned screen-reader label extend
 
 The first CI run passed restore, formatting, the warning-free Release build and all 21 then-current PostgreSQL tests, but the first browser request raced application startup. CI now waits for `/healthz` before browser checks. No application failure was hidden with a test retry.
 
-[CI run 42209651549](https://github.com/Mohamedajab/kitdesk/actions/runs/42209651549), head `3fbe25d4ee715c4e8c4d785d814ad23c3944fe00`, passed all 22 database tests with zero skips, formatting, the warning-free Release build, clean locked restores, frontend lint/type checking/build, all three Chromium cases and the multi-stage Docker image build on Ubuntu. PR #1 was merged after this run passed. The same runtime is being deployed on Render Free.
+[CI run 42209651549](https://github.com/Mohamedajab/kitdesk/actions/runs/42209651549), head `3fbe25d4ee715c4e8c4d785d814ad23c3944fe00`, passed all 22 database tests with zero skips, formatting, the warning-free Release build, clean locked restores, frontend lint/type checking/build, all three Chromium cases and the multi-stage Docker image build on Ubuntu. PR #1 was merged after this run passed. The live check then found an antiforgery error caused by Render terminating HTTPS before forwarding HTTP. PR #2 fixed the platform scheme handling while retaining Secure cookies. [CI run 42211352283](https://github.com/Mohamedajab/kitdesk/actions/runs/42211352283), head `532ca030945e49ebf608b8d58e55bf0c6dcc1b49`, passed the same gates with **24 database tests, zero skips** and three browser cases before merge.
+
+## Hosted verification
+
+The real .NET Docker service is available at [kitdesk.onrender.com](https://kitdesk.onrender.com), on Render Free with a dedicated Neon Free PostgreSQL 17 database in Frankfurt. Runtime source: `43271fdc7825aecc754986a7e1948a445cb1499c`; successful deployment: `dep-dbmro76gekts73eaatp0`.
+
+From `web`, PowerShell:
+
+```powershell
+$env:KITDESK_URL='https://kitdesk.onrender.com'
+npm run test:browser
+```
+
+All **three cases passed in 16.7 seconds** against the hosted API/database. The committed screenshots and workflow recording were refreshed from that successful run. This covers checkout/return/history, server-backed role switching, form validation, keyboard operation, accessibility checks, mobile overflow, a two-tab checkout conflict with preserved input, and two independent visitors with persistent, isolated records.
+
+The first hosted run exceeded Playwright's five-second assertion window while opening a desk. Hosted checks now allow 15 seconds for assertions and 90 seconds for navigation, with no retries. A subsequent run caught the keyboard test trying to focus a temporarily disabled button during role switching; it now waits for the button to be enabled before testing keyboard activation. Both failures remain documented rather than counted as passes.
+
+At 11:42 UTC, Render recorded “Service restarted by you”. The same browser session then reloaded Current loans and still showed the saved USB-C dock loan for fictional “Restart check borrower”, alongside the seeded overdue loan. Both authentication and stored loan state survived the real process restart. [Restart screenshot](screenshots/restart.png).
+
+The initial Render automatic build targeted the placeholder main commit before the implementation merge and failed because it had no Dockerfile. The later image started correctly but exposed the HTTPS session issue described above. No paid instance or database was enabled.
 
 ## Evaluation boundaries
 
