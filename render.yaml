@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: kitdesk
+    runtime: docker
+    plan: free
+    region: frankfurt
+    autoDeploy: false
+    healthCheckPath: /healthz
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__Desk
+        sync: false

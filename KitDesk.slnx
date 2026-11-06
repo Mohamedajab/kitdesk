@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/KitDesk/KitDesk.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/KitDesk.Tests/KitDesk.Tests.csproj" />
+  </Folder>
+</Solution>
