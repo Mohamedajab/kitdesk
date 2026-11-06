@@ -75,6 +75,13 @@ if (args.Contains("--migrate"))
 }
 
 app.UseExceptionHandler();
+if (app.Environment.IsProduction() && app.Configuration.GetValue<bool>("RENDER"))
+    app.Use((context, next) =>
+    {
+        // Render redirects public HTTP to HTTPS before terminating TLS; do not trust forwarded client headers.
+        context.Request.Scheme = "https";
+        return next(context);
+    });
 app.UseStatusCodePages(async status =>
 {
     if (status.HttpContext.Request.Path.StartsWithSegments("/api"))

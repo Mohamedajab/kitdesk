@@ -79,6 +79,30 @@ public sealed class DeskFactory : WebApplicationFactory<Program>, IAsyncLifetime
 public sealed class DeskTests(DeskFactory app) : IClassFixture<DeskFactory>
 {
     [Fact]
+    public async Task RenderTlsTerminationKeepsCookiesSecureAndAllowsDemo()
+    {
+        await using var hosted = app.WithWebHostBuilder(builder => builder.UseEnvironment("Production").UseSetting("RENDER", "true"));
+        using var client = hosted.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
+        client.DefaultRequestHeaders.Add("X-Forwarded-Proto", "http");
+        var session = await client.GetAsync("/api/session");
+        Assert.Equal(HttpStatusCode.OK, session.StatusCode);
+        Assert.All(session.Headers.GetValues("Set-Cookie"), cookie => Assert.Contains("secure", cookie, StringComparison.OrdinalIgnoreCase));
+        var started = await DeskFactory.Post(client, "/api/demo/start", new { });
+        Assert.Equal(HttpStatusCode.Created, started.StatusCode);
+        Assert.All(started.Headers.GetValues("Set-Cookie"), cookie => Assert.Contains("secure", cookie, StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/equipment")).StatusCode);
+    }
+
+    [Fact]
+    public async Task OtherHostsCannotSpoofHttpsWithAForwardingHeader()
+    {
+        await using var hosted = app.WithWebHostBuilder(builder => builder.UseEnvironment("Production").UseSetting("RENDER", "false"));
+        using var client = hosted.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Forwarded-Proto", "https");
+        Assert.Equal(HttpStatusCode.InternalServerError, (await client.GetAsync("/api/session")).StatusCode);
+    }
+
+    [Fact]
     public async Task MigrationsAndOpenApiAreReal()
     {
         using var scope = app.Services.CreateScope();
